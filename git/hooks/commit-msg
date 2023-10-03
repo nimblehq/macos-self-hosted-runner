@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#########################[ Prefix commit messages with the story ID ]#########################
+# Get the current branch name, if `sc-ID` or `gh-ID` is present, prefix the commit message
+# e.g. when running `git commit -m 'Commit Message':
+# feature/sc-1234-as-a-user-i-can-sign-in => [sc-1234] Commit Message
+# feature/gh-1234-as-a-user-i-can-sigh-in => [#1234] Commit Message
+##############################################################################################
+
+# using `branch | grep '*'` instead of `git rev-parse --abbrev-ref HEAD` to ensure it works even when the HEAD
+# is not pointing to the branch tip (e.g. during interactive rebasing)
+BRANCH_NAME="$(git branch | grep '*' | grep -E 'sc-\d+|gh-\d+' -o)"
+
+# Check if the branch name starts with 'sc-' followed by one or more digits using =~
+if [[ $BRANCH_NAME =~ ^sc-([0-9]+) ]]; then
+  PREFIX="[${BASH_REMATCH[0]}]"
+else
+  # Extract only the digits after 'gh-' using parameter expansion
+  PREFIX="[#${BRANCH_NAME##gh-}]"
+fi
+
+FIRSTLINE=$(head -n1 $1)
+
+# Check if the prefix '[sc-1234]' or '#1234' does NOT already exist at the beginning of the commit message using grep
+if grep -vqF $PREFIX <<< $FIRSTLINE; then
+  # The -i option (edit in-place) behaves differently on OSX and Linux
+  # To not create backup file:
+  # OSX: sed -i '' expression file
+  # Linux: sed -i expression file
+  # See: https://unix.stackexchange.com/questions/13711/differences-between-sed-on-mac-osx-and-other-standard-sed/131940#131940:~:text=%2Di%20%27%27%20works,to%20sed).
+  # This is a work-around for that
+  PATCHED=$(sed "1 s/^.*$/$PREFIX $FIRSTLINE/" "$1")
+  echo "$PATCHED" > "$1"
+fi
