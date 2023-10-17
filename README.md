@@ -8,6 +8,10 @@ Clone the repository
 
 `git clone git@github.com:nimblehq/git-template.git`
 
+Run
+
+`sh install_clean_up_scripts.sh`
+
 ## License
 
 This project is Copyright (c) 2014 and onwards Nimble. It is free software and may be redistributed under the terms specified in the [LICENSE] file.
